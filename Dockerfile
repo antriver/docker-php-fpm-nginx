@@ -1,10 +1,10 @@
-FROM php:8.4.3-fpm
+FROM php:fpm
 
 RUN apt update
 
 # Install PHP extensions for Laravel
 RUN docker-php-ext-install mysqli pdo pdo_mysql bcmath && docker-php-ext-enable pdo_mysql bcmath
-RUN pecl install timezonedb && docker-php-ext-enable timezonedb
+RUN pecl channel-update pecl.php.net && pecl install timezonedb && docker-php-ext-enable timezonedb
 
 # Add PHP configuration
 COPY config/php/fpm/conf.d/98-defaults.ini /usr/local/etc/php/conf.d/98-defaults.ini
