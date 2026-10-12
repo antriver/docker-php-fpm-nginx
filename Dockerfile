@@ -1,10 +1,19 @@
-FROM php:fpm
+# The official PHP image tag to build from, e.g. 8.4.13-fpm. Set by build.sh.
+ARG PHP_IMAGE_TAG=fpm
+FROM php:${PHP_IMAGE_TAG}
 
-RUN apt update
+# Older PHP images are based on Debian releases that have moved to archive.debian.org, so fall back to the archive if the normal mirrors fail.
+RUN apt update || ( \
+        sed -i -e 's|deb.debian.org|archive.debian.org|g' -e 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list \
+        && apt update \
+    )
 
 # Install PHP extensions for Laravel
 RUN docker-php-ext-install mysqli pdo pdo_mysql bcmath && docker-php-ext-enable pdo_mysql bcmath
 RUN pecl channel-update pecl.php.net && pecl install timezonedb && docker-php-ext-enable timezonedb
+
+# OPcache is built in from PHP 8.5 and enabled by newer official images, but older images ship it disabled.
+RUN php -m | grep -q "Zend OPcache" || docker-php-ext-enable opcache
 
 # Add PHP configuration
 COPY config/php/fpm/conf.d/98-defaults.ini /usr/local/etc/php/conf.d/98-defaults.ini

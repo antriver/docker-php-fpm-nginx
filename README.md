@@ -119,10 +119,17 @@ In addition to the default example above we also have:
 
 ## Building and Publishing The Image
 
-To build the image, run the following command:
+To build the image with the newest PHP version, run the following command:
 
     ./build.sh
 
-To build and publish the image, run the following command:
+To build with a specific PHP version, pass it as the first argument. Any version with an official `php:<version>-fpm` image works, e.g. `8.3` or `8.4.13`:
+
+    ./build.sh 8.4.13
+
+Images are tagged with the PHP and Nginx versions they contain, e.g. `antriver/php-fpm-nginx:php8.4.13-nginx1.28.0`. Only builds without a PHP version are also tagged as `latest`.
+
+To build and publish the image, add `--publish`:
 
     ./build.sh --publish
+    ./build.sh 8.4.13 --publish
