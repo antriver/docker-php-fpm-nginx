@@ -19,6 +19,19 @@ usage() {
   echo "   Example: $0 8.4.13 or $0 8.3 --publish"
 }
 
+# Checks there are stored Docker Hub credentials without prompting, because docker login would start an interactive login.
+# It only checks they exist, so expired credentials still pass.
+has_docker_hub_login() {
+  local config="${DOCKER_CONFIG:-$HOME/.docker}/config.json"
+  local store
+  store=$(sed -n 's/.*"credsStore": *"\([^"]*\)".*/\1/p' "$config" 2>/dev/null)
+  if [ -n "$store" ]; then
+    echo "https://index.docker.io/v1/" | "docker-credential-$store" get > /dev/null 2>&1
+  else
+    grep -q '"https://index.docker.io/v1/"' "$config" 2>/dev/null
+  fi
+}
+
 VERSION=""
 PUBLISH=false
 for ARG in "$@"; do
@@ -44,6 +57,12 @@ done
 if [ -n "$VERSION" ] && [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
   echo "❌ Error: PHP version must look like 8, 8.4 or 8.4.13"
   usage
+  exit 1
+fi
+
+# Check the login now rather than letting the push fail after a full build.
+if [ "$PUBLISH" = true ] && ! has_docker_hub_login; then
+  echo "❌ Not logged in to Docker Hub. Run docker login (or sign in to Docker Desktop) and try again."
   exit 1
 fi
 
