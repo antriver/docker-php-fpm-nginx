@@ -51,11 +51,9 @@ COPY config/nginx/snippets /etc/nginx/snippets/
 # Remove default Nginx server
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Install Supervisor
-RUN apt install -y supervisor
-
-# Add Supervisor configuration
-COPY config/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Add the script that runs PHP-FPM and Nginx together
+COPY bin/start-php-fpm-nginx /usr/local/bin/start-php-fpm-nginx
+RUN chmod +x /usr/local/bin/start-php-fpm-nginx
 
 # Setup document root
 WORKDIR /var/www/app
@@ -64,5 +62,5 @@ WORKDIR /var/www/app
 EXPOSE 80
 EXPOSE 443
 
-# Let Supervisor start Nginx & PHP-FPM
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Start Nginx & PHP-FPM
+CMD ["/usr/local/bin/start-php-fpm-nginx"]

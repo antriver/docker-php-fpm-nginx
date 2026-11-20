@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Runs PHP-FPM and Nginx in the foreground as the container's main process. When either one exits,
+# the other is stopped and the container exits with its status, so Docker's restart policy can bring
+# both back.
+
+php-fpm -F &
+nginx -g 'daemon off;' &
+
+# Passes a stop signal on to both and exits once they have finished. docker stop sends SIGQUIT (the
+# official php image's STOPSIGNAL), which both treat as a graceful stop that lets running requests end.
+# Bash ignores SIGQUIT unless it is trapped.
+forward() {
+    kill -"$1" $(jobs -p) 2>/dev/null
+    wait
+    exit 0
+}
+trap 'forward QUIT' QUIT
+trap 'forward TERM' TERM
+trap 'forward INT' INT
+
+# Returns when the first of the two exits, or as soon as a trapped signal arrives
+wait -n
+status=$?
+
+kill -TERM $(jobs -p) 2>/dev/null
+wait
+exit $status
